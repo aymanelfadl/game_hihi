@@ -2,6 +2,10 @@ import * as THREE from 'three';
 import React, { useEffect, useRef } from 'react';
 import Map from "@/interfaces/Map";
 
+import { GLTFLoader } from 'three/examples/jsm/Addons.js';
+import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
+
+
 function Scene() {
   const containerRef = useRef<HTMLDivElement | null>(null);
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
@@ -9,7 +13,7 @@ function Scene() {
 
   useEffect(() => {
     const scene = new THREE.Scene();
-
+    
     // Renderer
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -24,6 +28,25 @@ function Scene() {
     const dirLight = new THREE.DirectionalLight(0xffffff, 0.8);
     dirLight.position.set(3, 10, 5);
     scene.add(dirLight);
+
+    // Instantiate a loader
+    const loader = new GLTFLoader();
+    loader.load(
+      '/models/gun/scene.gltf',
+      (gltf) => {
+        const gun = gltf.scene;
+    
+        // Position gun relative to camera origin (local space)
+        gun.scale.set(1, 1, -1);   // Bigger scale
+        gun.position.set(0.2, -0.2, -0.5);  // In front of camera in local space        
+    
+        // Add gun as a child of the camera (do NOT add to scene)
+        camera.add(gun);
+        scene.add(camera);
+        console.log("Gun added to camera successfully!");
+      }
+    );
+    
 
     // Textures
     const floorTexture = new THREE.TextureLoader().load("/textures/floor.jpg");
@@ -80,7 +103,7 @@ function Scene() {
     window.addEventListener("keyup", onKeyUp);
     window.addEventListener("mousemove", (event: MouseEvent) => {
       const yawSensitivity = 0.005;
-      const pitchSensitivity = 0.003;
+      const pitchSensitivity = 0.0019;
       yaw += event.movementX * yawSensitivity;
       pitch += event.movementY * pitchSensitivity;
     });
@@ -89,8 +112,12 @@ function Scene() {
       document.body.requestPointerLock();
     });
 
+    // const controls = new OrbitControls(camera, renderer.domElement);
+    // controls.target.set(0, 0, 0);
+    
     // Animate
-    const animate = () => {
+    const animate = () =>
+    {
       requestAnimationFrame(animate);
 
       // Forward = where camera is looking
@@ -113,11 +140,14 @@ function Scene() {
 
       movement.y = 0; 
       movement.normalize();
+    
       camera.position.add(movement.multiplyScalar(speed));
       camera.lookAt(camera.position.clone().add(forward));
 
       // Position sphere in front of camera
       player.position.copy(camera.position).add(forward.clone().multiplyScalar(2));
+      
+      // controls.update();
       renderer.render(scene, camera);
     };
 
