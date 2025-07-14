@@ -1,6 +1,7 @@
-import { CellPosition, CellType } from "./Map";
+export type CellType = 'empty' | 'wall' | 'playerStart';
+export type CellPosition = [number, number, number];
 
-export class MapObjects
+export class MapObject
 {
   private _position: CellPosition;
   private _type: CellType;

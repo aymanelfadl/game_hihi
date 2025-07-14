@@ -1,16 +1,14 @@
-import { MapObjects } from "./MapObjects";
-
-export type CellType = 'empty' | 'wall' | 'playerStart';
-export type CellPosition = [number, number, number];
+import { MapObject } from "./MapObjects";
+import { CellType, CellPosition } from "./MapObjects";
 
 export default class Map {
-  private _mapObjs: MapObjects[][];
+  private _mapObjs: MapObject[][];
 
   constructor(width: number = 10, height: number = 10) {
     this._mapObjs = [];
 
     for (let y = 0; y < height; y++) {
-      const row: MapObjects[] = [];
+      const row: MapObject[] = [];
 
       for (let x = 0; x < width; x++) {
         let type: CellType;
@@ -25,18 +23,18 @@ export default class Map {
           type = 'empty';
         }
         const position: CellPosition = [x, 0, -y];
-        row.push(new MapObjects(position, type));
+        row.push(new MapObject(position, type));
       }
 
       this._mapObjs.push(row);
     }
   }
 
-  get mapObjs(): MapObjects[][] {
+  get mapObjs(): MapObject[][] {
     return this._mapObjs;
   }
 
-  getMapObject(x: number, y: number): MapObjects | undefined {
+  getMapObject(x: number, y: number): MapObject | undefined {
     return this._mapObjs[y]?.[x];
   }
 }
