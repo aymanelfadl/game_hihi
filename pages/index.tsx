@@ -52,7 +52,7 @@ function Scene() {
     // Textures
     const floorTexture = new THREE.TextureLoader().load("/textures/floor.jpg");
     const wallTexture = new THREE.TextureLoader().load("/textures/wall.jpg");
-    
+
     // Camera direction control
     let yaw = 0;
     let pitch = 0;
@@ -142,7 +142,14 @@ function Scene() {
       movement.y = 0; 
       movement.normalize();
     
-      camera.position.add(movement.multiplyScalar(speed));
+      const newPosition = camera.position.clone().add(movement.multiplyScalar(speed));
+
+      // Assuming map goes from x: 0→9 and z: 0→-9
+      newPosition.x = Math.max(1, Math.min(8, newPosition.x));
+      newPosition.z = Math.max(-8, Math.min(-1, newPosition.z));
+      console.log(newPosition);
+      // Apply clamped position
+      camera.position.copy(newPosition);
       camera.lookAt(camera.position.clone().add(forward));
 
       // Position sphere in front of camera
