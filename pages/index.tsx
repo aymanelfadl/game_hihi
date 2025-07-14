@@ -1,4 +1,6 @@
 import * as THREE from 'three';
+import { OrbitControls } from 'three/examples/jsm/Addons.js';
+
 import React, { useEffect, useRef } from 'react';
 import Map from "@/interfaces/Map"
 
@@ -21,10 +23,11 @@ function Scene() {
   useEffect(() =>
   {
     const scene = new THREE.Scene();
-    const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 100);
-    cameraRef.current = camera;
 
+    const camera = new THREE.PerspectiveCamera(90, window.innerWidth / window.innerHeight, 0.1, 100);
     camera.lookAt(0, 0, 1);
+
+    cameraRef.current = camera;
 
     const renderer = new THREE.WebGLRenderer();
     renderer.setSize(window.innerWidth, window.innerHeight);
@@ -32,8 +35,10 @@ function Scene() {
 
     const map = new Map();
 
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
+    for (let i = 0; i < 10; i++)
+    {
+      for (let j = 0; j < 10; j++)
+      {
         const objectType = map.getMapObject(i, j);
         if (objectType?.type === "wall")
         {
@@ -46,8 +51,16 @@ function Scene() {
         } 
         else if (objectType?.type === "playerStart")
         {
+          const player = new THREE.Mesh(
+            new THREE.SphereGeometry(0.1, 16, 16),
+            new THREE.MeshBasicMaterial({ color: 0xff0000 })
+          );
+          player.position.set(i, 0.3, -j - 0.5);
+
           camera.position.set(i, 0.5, -j);
           camera.lookAt(i, 1, -j - 1);
+
+          scene.add(player);
           const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1),
             new THREE.MeshBasicMaterial({ color: 0x0000ff })
@@ -56,7 +69,9 @@ function Scene() {
           floor.position.set(i, 0, -j);
           scene.add(floor);
         
-        } else {
+        }
+        else
+        {
           const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1),
             new THREE.MeshBasicMaterial({ color: 0x0000ff })
@@ -76,10 +91,10 @@ function Scene() {
 
       const { forward, right } = getCameraDirections(cam);
 
-      if (event.key === "w") cam.position.add(forward.clone().multiplyScalar(speed));
-      if (event.key === "s") cam.position.add(forward.clone().multiplyScalar(-speed));
-      if (event.key === "a") cam.position.add(right.clone().multiplyScalar(-speed));
-      if (event.key === "d") cam.position.add(right.clone().multiplyScalar(speed));
+      if (event.key.toLowerCase() === "w") cam.position.add(forward.clone().multiplyScalar(speed));
+      if (event.key.toLowerCase() === "s") cam.position.add(forward.clone().multiplyScalar(-speed));
+      if (event.key.toLowerCase() === "a") cam.position.add(right.clone().multiplyScalar(-speed));
+      if (event.key.toLowerCase() === "d") cam.position.add(right.clone().multiplyScalar(speed));
     };
 
     // Camera rotation values
@@ -99,21 +114,29 @@ function Scene() {
     window.addEventListener("keydown", onKeyDown);
     document.body.addEventListener("click", () => {document.body.requestPointerLock();});
 
-
-    const animate = () => {
+    const controls = new OrbitControls(camera, renderer.domElement);
+    const gridHelprer = new THREE.GridHelper(200, 50);
+    scene.add(gridHelprer);
+    
+    const animate = () =>
+    {
       requestAnimationFrame(animate);
+      
       const direction = new THREE.Vector3(
         Math.cos(pitch) * Math.sin(yaw),
         Math.sin(pitch),
         -Math.cos(pitch) * Math.cos(yaw)
       );
-
+      
       const target = new THREE.Vector3().addVectors(camera.position, direction);
       camera.lookAt(target);
 
-
+      controls.update();
+      
       renderer.render(scene, camera);
+
     };
+
     animate();
 
   }, []);
