@@ -1,4 +1,4 @@
-export type CellType = 'empty' | 'wall' | 'playerStart';
+export type CellType = 'empty' | 'wall' | 'playerStart' | 'door';
 export type CellPosition = [number, number, number];
 
 export class MapObject

@@ -1,9 +1,8 @@
 import * as THREE from 'three';
 import React, { useEffect, useRef } from 'react';
 import Map from "@/interfaces/Map";
-
+import { mapLayout } from "@/constants/mapLayout"
 import { GLTFLoader } from 'three/examples/jsm/Addons.js';
-import { OrbitControls } from 'three/examples/jsm/controls/OrbitControls.js';
 
 
 function Scene() {
@@ -54,6 +53,7 @@ function Scene() {
     // Textures
     const floorTexture = new THREE.TextureLoader().load("/textures/floor.jpg");
     const wallTexture = new THREE.TextureLoader().load("/textures/wall.jpg");
+    const doorTexture = new THREE.TextureLoader().load("textures/door.png");
 
     // Camera direction control
     let yaw = 0;
@@ -67,9 +67,11 @@ function Scene() {
     scene.add(player);
 
     // Build Map
-    const map = new Map();
-    for (let i = 0; i < 10; i++) {
-      for (let j = 0; j < 10; j++) {
+    const map = new Map(mapLayout);
+    for (let i = 0; i < map.getMapHeight(); i++)
+      {
+      for (let j = 0; j < map.getMapWidth(i); j++)
+      {
         const objectType = map.getMapObject(i, j);
         const x = i;
         const z = -j;
@@ -79,9 +81,11 @@ function Scene() {
             new THREE.BoxGeometry(1, 5, 1),
             new THREE.MeshStandardMaterial({ map: wallTexture })
           );
-          wall.position.set(x, 0.5, z);
+          wall.position.set(x, 1, z);
           scene.add(wall);
-        } else {
+        }
+        else
+        {
           const floor = new THREE.Mesh(
             new THREE.PlaneGeometry(1, 1),
             new THREE.MeshStandardMaterial({ map: floorTexture })
@@ -89,9 +93,18 @@ function Scene() {
           floor.rotation.x = -Math.PI / 2;
           floor.position.set(x, 0, z);
           scene.add(floor);
-
-          if (objectType?.type === "playerStart") {
+          if (objectType?.type === "playerStart")
+          {
             camera.position.set(x, 0.7, z);
+          }
+          else if (objectType?.type === "door")
+          {
+            const door = new THREE.Mesh(
+              new THREE.BoxGeometry(1, 5, 1),
+              new THREE.MeshStandardMaterial({ map: doorTexture})
+            )
+            door.position.set(x, 1, z);
+            scene.add(door);
           }
         }
       }
@@ -125,6 +138,34 @@ function Scene() {
 
     // const controls = new OrbitControls(camera, renderer.domElement);
     // controls.target.set(0, 0, 0);
+
+    const collisionDistance = 0.9; // how close you can get to a wall before collision
+    const raycaster = new THREE.Raycaster();
+    const collisionOffsets = [
+      new THREE.Vector3(0, 0, 0),             // center ray
+      new THREE.Vector3(0.3, 0, 0),           // right offset
+      new THREE.Vector3(-0.3, 0, 0),          // left offset
+      // optionally add front-right, front-left etc.
+    ];
+    
+    function canMove(position: THREE.Vector3, direction: THREE.Vector3, scene: THREE.Scene): boolean {
+      for (const offset of collisionOffsets) {
+        // Ray origin = player position + offset
+        const origin = position.clone().add(offset);
+    
+        // Ray direction = normalized movement vector (on XZ plane)
+        const dir = direction.clone().setY(0).normalize();
+    
+        raycaster.set(origin, dir);
+        const intersects = raycaster.intersectObjects(scene.children, true);
+    
+        if (intersects.length > 0 && intersects[0].distance < collisionDistance)
+        {
+          return false;
+        }
+      }
+      return true;
+    }
     
     // Animate
     const animate = () =>
@@ -142,29 +183,27 @@ function Scene() {
       const right = new THREE.Vector3().crossVectors(forward, new THREE.Vector3(0, 1, 0)).normalize();
 
       // Move camera (based on WASD keys)
+      const speed = 0.1;
       const movement = new THREE.Vector3();
-
+      
       if (keyDowns.has("w")) movement.add(forward);
       if (keyDowns.has("s")) movement.add(forward.clone().negate());
       if (keyDowns.has("d")) movement.add(right);
       if (keyDowns.has("a")) movement.add(right.clone().negate());
-
-      movement.y = 0; 
+      
+      movement.y = 0;
       movement.normalize();
-    
-      const newPosition = camera.position.clone().add(movement.multiplyScalar(speed));
-
-      // Assuming map goes from x: 0→9 and z: 0→-9
-      newPosition.x = Math.max(1, Math.min(8, newPosition.x));
-      newPosition.z = Math.max(-8, Math.min(-1, newPosition.z));
-      console.log(newPosition);
-      // Apply clamped position
-      camera.position.copy(newPosition);
+      
+      const proposedPosition = camera.position.clone().add(movement.clone().multiplyScalar(speed));
+      
+      if (canMove(camera.position, movement, scene))
+      {
+        camera.position.copy(proposedPosition);
       camera.lookAt(camera.position.clone().add(forward));
 
       // Position sphere in front of camera
       player.position.copy(camera.position).add(forward.clone().multiplyScalar(2));
-      
+      }
       // controls.update();
       renderer.render(scene, camera);
     };
