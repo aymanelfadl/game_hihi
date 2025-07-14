@@ -11,7 +11,8 @@ function Scene() {
   const cameraRef = useRef<THREE.PerspectiveCamera | null>(null);
   const keyDowns = new Set<string>();
 
-  useEffect(() => {
+  useEffect(() =>
+  {
     const scene = new THREE.Scene();
     
     // Renderer
@@ -51,7 +52,7 @@ function Scene() {
     // Textures
     const floorTexture = new THREE.TextureLoader().load("/textures/floor.jpg");
     const wallTexture = new THREE.TextureLoader().load("/textures/wall.jpg");
-
+    
     // Camera direction control
     let yaw = 0;
     let pitch = 0;
