@@ -32,10 +32,12 @@ function Scene() {
 
     // Instantiate a loader
     const loader = new GLTFLoader();
+    let gun : THREE.Object3D;
+
     loader.load(
       '/models/gun/scene.gltf',
       (gltf) => {
-        const gun = gltf.scene;
+        gun = gltf.scene;
     
         // Position gun relative to camera origin (local space)
         gun.scale.set(1, 1, -1);   // Bigger scale
@@ -108,6 +110,14 @@ function Scene() {
       yaw += event.movementX * yawSensitivity;
       pitch += event.movementY * pitchSensitivity;
     });
+    window.addEventListener("mousedown", (event: MouseEvent) => {
+      const originZ = gun.position.z;
+
+      gun.position.z += 0.1;      
+
+      setInterval(()=> gun.position.z = originZ, 400);
+
+    })
 
     document.body.addEventListener("click", () => {
       document.body.requestPointerLock();
